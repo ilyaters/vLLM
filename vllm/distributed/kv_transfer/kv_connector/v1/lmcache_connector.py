@@ -24,6 +24,7 @@ from vllm.v1.outputs import KVConnectorOutput
 
 if TYPE_CHECKING:
     from vllm.forward_context import ForwardContext
+    from vllm.v1.core.block_pool import BlockPool
     from vllm.v1.core.kv_cache_manager import KVCacheBlocks
     from vllm.v1.kv_cache_interface import KVCacheConfig
     from vllm.v1.request import Request
@@ -256,6 +257,16 @@ class LMCacheConnectorV1(KVConnectorBase_V1):
     # ==============================
     # Scheduler-side methods
     # ==============================
+    def bind_gpu_block_pool(self, gpu_block_pool: "BlockPool") -> None:
+        """Bind GPU block pool to the LMCache engine for watermark tracking.
+
+        Args:
+            gpu_block_pool: the vLLM BlockPool (has num_gpu_blocks,
+                get_num_free_blocks(), get_usage()).
+        """
+        if hasattr(self._lmcache_engine, "bind_gpu_block_pool"):
+            self._lmcache_engine.bind_gpu_block_pool(gpu_block_pool)
+
     def get_num_new_matched_tokens(
         self,
         request: "Request",
