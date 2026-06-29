@@ -367,7 +367,14 @@ class KVCacheManager:
             RequestStatus.WAITING,
             RequestStatus.PREEMPTED,
         ):
-            watermark_blocks = self.watermark_blocks
+            if num_external_computed_tokens > 0:
+                # LMCache-hit: reduce watermark to 25% to avoid deadlock
+                # while still allowing hit-requests to be admitted earlier.
+                # Full bypass (watermark_blocks=0) risks starving running
+                # requests that need blocks to complete.
+                watermark_blocks = max(self.watermark_blocks // 4, 0)
+            else:
+                watermark_blocks = self.watermark_blocks
 
         if full_sequence_must_fit:
             # First check and fail if the full request sequence won't fit.
